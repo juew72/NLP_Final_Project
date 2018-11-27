@@ -1,13 +1,19 @@
 import os
+import random
 import pandas as pd
 from bs4 import BeautifulSoup
 import requests
 import nltk
 from nltk.corpus import stopwords
-from nltk.classify import SklearnClassifier
 from sklearn.model_selection import train_test_split
 from wordcloud import WordCloud,STOPWORDS
 import matplotlib.pyplot as plt
+import nltk.classify.util
+from nltk.classify import NaiveBayesClassifier
+import pickle
+
+#Set random seed for reproducable resutls
+random.seed(0)
 
 #Scrape webpage function
 def scrap_data(url):
@@ -48,58 +54,76 @@ def draw_wordcloud(reviews, color='black'):
     plt.axis('off')
     plt.show()
 
+# Create dictionary object for nlkt NaivesBayesian
+def word_feats(words):
+    return dict([(word, True) for word in words])
+
+# Preprocess reviews
+def preprocessor(review) :
+    words = nltk.word_tokenize(review) # Tokenize
+    words = [word for word in words if not word in stop_words] # Remove stop words
+    return words
+
+#Load stopwords
+stop_words = set(stopwords.words("english"))
+
 #Get path for dataset
 current_working_directory = os.getcwd()
 dataset_path = current_working_directory + '/Dataset/Womens Clothing E-Commerce Reviews.csv'
 
-
 #Load dataset
-dataset = pd.read_csv(dataset_path)[['Review Text','Recommended IND']]
+dataset = pd.read_csv(dataset_path)[['Title', 'Review Text','Recommended IND']]
 
-stop_words = set(stopwords.words("english"))
+#Replace missing review text with title when missing
+for index, row in dataset.iterrows():
+    review_text = row['Review Text']
+    if pd.isnull(review_text):
+        row['Review Text'] = row['Title']
+
+#Drop the rest of na values
+dataset = dataset.dropna();
+
+#Split to pos and neg sets
+pos_reviews = dataset[dataset["Recommended IND"] == 1]['Review Text']
+neg_reviews = dataset[dataset["Recommended IND"] == 0]['Review Text']
+
+# print("Positive words")
+# draw_wordcloud(pos_reviews,'white')
+# print("Negative words")
+# draw_wordcloud(neg_reviews)
+
+#Create pos and neg dic sets for training
+pos_feats = [(word_feats(preprocessor(pos_review)), 'pos') for pos_review in pos_reviews]
+neg_feats = [(word_feats(preprocessor(neg_review)), 'neg') for neg_review in pos_reviews]
 
 #Get train and test set
-train, test = train_test_split(dataset,test_size = 0.3)
+pos_train, pos_test = train_test_split(pos_feats,test_size = 0.3)
+neg_train, neg_test = train_test_split(neg_feats,test_size = 0.3)
 
-#Split data into positive and negative
-train_pos = train[train['Recommended IND'] == 1]
-train_pos = train_pos['Review Text']
-train_neg = train[ train['Recommended IND'] == 0]
-train_neg = train_neg['Review Text']
+train_feats = pos_train + neg_train
+test_feats = pos_test + neg_test
 
-print("Positive words")
-draw_wordcloud(train_pos,'white')
-print("Negative words")
-draw_wordcloud(train_neg)
+#Train model
+print('train on %d instances, test on %d instances' % (len(train_feats), len(test_feats)))
+classifier = NaiveBayesClassifier.train(train_feats)
 
-#Processed reviews in train dataset
-processed_reviews_train = []
-for index, row in train.iterrows():
-    review = row['Review Text']
-    review_words = nltk.word_tokenize(review)
-    review_words = [word for word in review_token if not word in stop_words]
-    processed_reviews_train.append((review_words, row['Recommend IND']))
+#Test model
+print('accuracy:', nltk.classify.util.accuracy(classifier, test_feats))
 
+#Most informative features
+classifier.show_most_informative_features()
 
-# Extracting word features
-def get_word_list(reviews):
-    wordlist = []
-    for review, sentiment in reviews:
-        wordlist.append()
-    return all
+#save classifier for testing
+# save_classifier = open("naivebayes.pickle","wb")
+# pickle.dump(classifier, save_classifier)
+# save_classifier.close()
+#
+# classifier_f = open("naivebayes.pickle", "rb")
+# classifier = pickle.load(classifier_f)
+# classifier_f.close()
 
-def get_word_features(wordlist):
-    wordlist = nltk.FreqDist(wordlist)
-    features = wordlist.keys()
-    return features
-w_features = get_word_features(get_words_in_tweets(tweets))
-
-def extract_features(document):
-    document_words = set(document)
-    features = {}
-    for word in w_features:
-        features['contains(%s)' % word] = (word in document_words)
-    return features
+test = "This dress is amazing. It fits well and the color is pretty"
+print(classifier.classify(word_feats(test.split())))
 
 #scrape website
 # reviews_url = "https://www.amazon.com/SWQZVT-Spaghetti-Sundress-Backless-Dresses/product-reviews/B07CG69L57/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews"
