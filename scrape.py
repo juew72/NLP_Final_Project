@@ -51,7 +51,7 @@ def scrap_data(url):
     # Pick a random user agent
     user_agent = random.choice(user_agent_list)
 
-    html = requests.get(url, headers = {'User-Agent': user_agent}, proxies={"http": proxy, "https": proxy}).content
+    html = requests.get(url, headers = {'User-Agent': user_agent}).content
     return BeautifulSoup(html, 'html.parser')
 
 def get_title_and_review(url):

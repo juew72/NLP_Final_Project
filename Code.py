@@ -30,10 +30,10 @@ for review in reviews:
     print("tag: ", tag)
 
 print("Positive reviews:", pos_count)
-print("Negetive reviews:", neg_count)
+print("Negative reviews:", neg_count)
 
 #Calculate proportion. if percentage is pos_reviews are more than 70% => recommended
 if pos_count/(pos_count + neg_count) >= 0.7:
-    print(title, "is recommended")
+    print(title, " is recommended")
 else:
-    print(title, "is not recommended")
+    print(title, " is not recommended")
