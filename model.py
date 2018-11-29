@@ -48,6 +48,7 @@ def word_feats(words):
 # Preprocess reviews
 def preprocessor(review) :
     cleaned_review = re.sub('[^a-zA-Z]', ' ', str(review))
+    cleaned_review = cleaned_review.lower()
     words = nltk.word_tokenize(cleaned_review) # Tokenization
     words = [word for word in words if not word in stop_words] # Remove stop words
     words = [wordnet_lemmatizer.lemmatize(word) for word in words] #Lemmatize words

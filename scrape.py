@@ -1,7 +1,7 @@
 from lxml.html import fromstring
 import requests
-from bs4 import BeautifulSoup
 import random
+from lxml import html
 
 user_agent_list = [
    #Chrome
@@ -51,19 +51,20 @@ def scrap_data(url):
     # Pick a random user agent
     user_agent = random.choice(user_agent_list)
 
-    html = requests.get(url, headers = {'User-Agent': user_agent}).content
-    return BeautifulSoup(html, 'html.parser')
+    response = requests.get(url, headers = {'User-Agent': user_agent})
+    return html.fromstring(response.content)
+    # return BeautifulSoup(html, 'html.parser')
 
 def get_title_and_review(url):
-    soup = scrap_data(url)
-    title = soup.find(attrs={'data-hook': 'product-link'}).getText()
-    total_page = soup.find_all('li', {'class':'page-button'}).pop().getText() if len(soup.find_all('li', {'class':'page-button'})) else 1
+    tree = scrap_data(url)
+    title = tree.xpath('//a[@data-hook="product-link"]/text()')[1]
+    total_page = tree.xpath('//li[@class="page-button"]/a/text()').pop() if len(tree.xpath('//li[@class="page-button"]/a/text()')) else 1
     reviews = []
     if total_page == 1:
-        reviews = [review_data.getText() for review_data in soup.find_all(attrs={'data-hook' : 'review-body'})]
+        reviews = [review_data.getText() for review_data in tree.xpath('//span[@data-hook="review-body"]/text()')]
     else:
         for page in range(int(total_page)):
             next_soup = scrap_data(url + '&pageNumber=' + str(page + 1))
-            next_reviews = [review_data.getText() for review_data in next_soup.find_all(attrs={'data-hook' : 'review-body'})]
+            next_reviews = [review_data for review_data in next_soup.xpath('//span[@data-hook="review-body"]/text()')]
             reviews = reviews + next_reviews
     return title,reviews

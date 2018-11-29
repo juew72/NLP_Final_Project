@@ -14,7 +14,7 @@ classifier = pickle.load(classifier_f)
 classifier_f.close()
 
 #Scrape data
-reviews_url = "https://www.amazon.com/Aokosor-Womens-Casual-Sleeve-Blouse/product-reviews/B07JVS6ZPK/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews"
+reviews_url = "https://www.amazon.com/AUSELILY-Womens-Pockets-Pleated-T-Shirt/product-reviews/B07H5CWWYY/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews"
 title, reviews = scrape.get_title_and_review(reviews_url)
 
 #Classify reviews from amazon
