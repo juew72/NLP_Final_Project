@@ -2,7 +2,7 @@ import model
 import scrape
 import pickle
 
-build_model = False
+build_model = True
 
 #Build model
 if build_model:
